@@ -1,3 +1,12 @@
+---
+title: CodeGuardian
+emoji: 🤖
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_file: server/app.py
+pinned: false
+---
 # CodeGuardian
 
 ## 1. Problem Description
