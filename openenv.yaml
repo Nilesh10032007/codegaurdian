@@ -1,0 +1,47 @@
+name: codeguardian
+version: "1.0.0"
+description: "AI Code Review RL Environment — agent reviews code, detects bugs, suggests fixes"
+author: "Antigravity"
+language: python
+entry_point: server/app.py
+
+observation_space:
+  type: object
+  fields:
+    code: string
+    filename: string
+    language: string
+    task_id: string
+    task_difficulty: string
+    issues_found: array
+    step_count: integer
+    done: boolean
+
+action_space:
+  type: object
+  fields:
+    action: string  # flag_bug | suggest_fix | approve | reject
+    line: integer
+    comment: string
+    bug_type: string
+
+reward:
+  type: float
+  range: [-1.0, 1.0]
+  partial: true
+
+tasks:
+  - id: syntax_check
+    difficulty: easy
+    description: "Detect syntax errors in Python code"
+  - id: logic_review
+    difficulty: medium
+    description: "Detect logical bugs in Python code"
+  - id: full_review
+    difficulty: hard
+    description: "Full code review — find all bug types"
+
+endpoints:
+  reset: POST /reset
+  step: POST /step
+  state: GET /state
