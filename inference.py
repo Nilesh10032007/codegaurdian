@@ -5,6 +5,12 @@ from openai import OpenAI
 
 BASE_URL = "http://localhost:7860"
 MAX_STEPS_FALLBACK = 20
+MIN_STRICT_SCORE = 0.001
+MAX_STRICT_SCORE = 0.999
+
+
+def clamp_strict(value: float) -> float:
+    return max(MIN_STRICT_SCORE, min(MAX_STRICT_SCORE, float(value)))
 
 def main():
     api_base = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
@@ -30,7 +36,7 @@ def main():
         done = False
         step = 0
         rewards = []
-        score = 0.001
+        score = MIN_STRICT_SCORE
         success = False
         
         while not done and step < MAX_STEPS_FALLBACK:
@@ -108,12 +114,11 @@ Step count: {obs['step_count']} / {MAX_STEPS_FALLBACK}
         if score == 0.0 or score == 1.0:
             print(f"WARNING: Score is exactly {score}. Clipping it to strictly between 0 and 1.")
             
-        import numpy as np
-        score = float(np.clip(score, 0.001, 0.999))
+        score = clamp_strict(score)
         total_score += score
         
         rewards_str = ",".join([f"{r:.2f}" for r in rewards])
-        print(f"[END] success={str(success).lower()} steps={step} score={score:.2f} rewards={rewards_str}")
+        print(f"[END] success={str(success).lower()} steps={step} score={score:.3f} rewards={rewards_str}")
         
     avg_score = total_score / len(tasks)
     print(f"Average score: {avg_score:.2f}")
