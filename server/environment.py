@@ -54,18 +54,20 @@ class CodeGuardianEnvironment:
             ))
             
         self.step_count += 1
-        self.total_reward += reward_detail.score
+        self.total_reward += reward_detail.step_reward
         
         if action.action in ["approve", "reject"] or self.step_count >= self.current_task["max_steps"]:
             self.done = True
             
-        info = {**reward_detail.model_dump(), "episode_score": None}
+        info = {**reward_detail.model_dump(), "episode_score": None, "score": None}
         if self.done:
-            info["episode_score"] = evaluate_score(self.current_task, self.actions_history)
+            final_score = evaluate_score(self.current_task, self.actions_history)
+            info["episode_score"] = final_score
+            info["score"] = final_score
             
         return {
             "observation": self.get_observation(),
-            "reward": reward_detail.score,
+            "reward": reward_detail.step_reward,
             "done": self.done,
             "info": info
         }

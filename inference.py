@@ -104,9 +104,12 @@ Step count: {obs['step_count']} / {MAX_STEPS_FALLBACK}
             print(f"[STEP] step={step} action={action_dict.get('action', 'none')} reward={reward:.2f} done={str(done).lower()} error={error_msg}")
         
         success = done
-        if score == 0.0:
-            score = 0.01
-        score = max(0.01, min(0.99, score))
+        
+        if score == 0.0 or score == 1.0:
+            print(f"WARNING: Score is exactly {score}. Clipping it to strictly between 0 and 1.")
+            
+        import numpy as np
+        score = float(np.clip(score, 1e-7, 1 - 1e-7))
         total_score += score
         
         rewards_str = ",".join([f"{r:.2f}" for r in rewards])

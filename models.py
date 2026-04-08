@@ -23,7 +23,7 @@ class CodeAction(BaseModel):
     bug_type: Optional[str] = None
 
 class RewardDetail(BaseModel):
-    score: float
+    step_reward: float
     reason: str
     partial: bool
 
