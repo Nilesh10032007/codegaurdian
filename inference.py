@@ -104,7 +104,9 @@ Step count: {obs['step_count']} / {MAX_STEPS_FALLBACK}
             print(f"[STEP] step={step} action={action_dict.get('action', 'none')} reward={reward:.2f} done={str(done).lower()} error={error_msg}")
         
         success = done
-        score = max(0.0, min(1.0, score))
+        if score == 0.0:
+            score = 0.01
+        score = max(0.01, min(0.99, score))
         total_score += score
         
         rewards_str = ",".join([f"{r:.2f}" for r in rewards])
