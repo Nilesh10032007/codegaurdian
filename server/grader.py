@@ -42,7 +42,7 @@ def compute_step_reward(action: CodeAction, task: Dict[str, Any], actions_taken:
 def evaluate_score(task: Dict[str, Any], actions_taken: List[CodeAction]) -> float:
     bugs = task.get("bugs", [])
     if not bugs:
-        return 1.0
+        return 0.99
         
     found_bugs = set()
     for action in actions_taken:
@@ -53,4 +53,4 @@ def evaluate_score(task: Dict[str, Any], actions_taken: List[CodeAction]) -> flo
                         found_bugs.add(idx)
                         
     score = len(found_bugs) / len(bugs)
-    return float(max(0.0, min(1.0, score)))
+    return float(max(0.01, min(0.99, score)))
