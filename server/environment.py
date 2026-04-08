@@ -66,7 +66,14 @@ class CodeGuardianEnvironment:
         if action.action in ["approve", "reject"] or self.step_count >= self.current_task["max_steps"]:
             self.done = True
 
-        info = {**reward_detail.model_dump(), "episode_score": None, "score": None}
+        info = {
+                "step_reward": clamp_score(reward_detail.step_reward),  # ✅ clamped
+                "reason": reward_detail.reason,
+                "partial": reward_detail.partial,
+                "episode_score": None,
+                "score": None
+                }
+                
         if self.done:
             final_score = evaluate_score(self.current_task, self.actions_history)
             info["episode_score"] = final_score
