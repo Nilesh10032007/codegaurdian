@@ -30,7 +30,7 @@ def main():
         done = False
         step = 0
         rewards = []
-        score = 0.0
+        score = 0.001
         success = False
         
         while not done and step < MAX_STEPS_FALLBACK:
@@ -98,7 +98,7 @@ Step count: {obs['step_count']} / {MAX_STEPS_FALLBACK}
             except Exception as e:
                 # Capture issues with steps.
                 error_msg = str(e)
-                reward = 0.0
+                reward = 0.1
                 done = True
                 
             print(f"[STEP] step={step} action={action_dict.get('action', 'none')} reward={reward:.2f} done={str(done).lower()} error={error_msg}")
@@ -109,7 +109,7 @@ Step count: {obs['step_count']} / {MAX_STEPS_FALLBACK}
             print(f"WARNING: Score is exactly {score}. Clipping it to strictly between 0 and 1.")
             
         import numpy as np
-        score = float(np.clip(score, 1e-7, 1 - 1e-7))
+        score = float(np.clip(score, 0.001, 0.999))
         total_score += score
         
         rewards_str = ",".join([f"{r:.2f}" for r in rewards])

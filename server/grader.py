@@ -1,12 +1,28 @@
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any
 from models import CodeAction, RewardDetail
+
+MIN_STRICT_VALUE = 0.001
+MAX_STRICT_VALUE = 0.999
+LOW_REWARD = 0.1
+PARTIAL_REWARD = 0.3
+MEDIUM_REWARD = 0.5
+HIGH_REWARD = 0.9
+
+
+def clamp_strict(value: float) -> float:
+    return max(MIN_STRICT_VALUE, min(MAX_STRICT_VALUE, float(value)))
+
 
 def compute_step_reward(action: CodeAction, task: Dict[str, Any], actions_taken: List[CodeAction] = None) -> RewardDetail:
     actions_taken = actions_taken or []
     
     if action.action in ["flag_bug", "suggest_fix"]:
         if action.line is None:
-            return RewardDetail(step_reward=-0.3, reason="Action missing line number", partial=True)
+            return RewardDetail(
+                step_reward=LOW_REWARD,
+                reason="Action missing line number",
+                partial=True,
+            )
             
         matched_bug = None
         for bug in task["bugs"]:
@@ -16,13 +32,29 @@ def compute_step_reward(action: CodeAction, task: Dict[str, Any], actions_taken:
                 
         if matched_bug:
             if action.action == "flag_bug" and action.bug_type == matched_bug["bug_type"]:
-                return RewardDetail(step_reward=1.0, reason="Correctly flagged a real bug.", partial=True)
+                return RewardDetail(
+                    step_reward=HIGH_REWARD,
+                    reason="Correctly flagged a real bug.",
+                    partial=True,
+                )
             elif action.action == "suggest_fix":
-                return RewardDetail(step_reward=0.5, reason="Good fix suggestion.", partial=True)
+                return RewardDetail(
+                    step_reward=MEDIUM_REWARD,
+                    reason="Good fix suggestion.",
+                    partial=True,
+                )
             else:
-                return RewardDetail(step_reward=0.3, reason="Flagged bug on correct line but wrong type.", partial=True)
+                return RewardDetail(
+                    step_reward=PARTIAL_REWARD,
+                    reason="Flagged bug on correct line but wrong type.",
+                    partial=True,
+                )
         else:
-            return RewardDetail(step_reward=-0.3, reason="Wrong action: flagged bug on clean line.", partial=True)
+            return RewardDetail(
+                step_reward=LOW_REWARD,
+                reason="Wrong action: flagged bug on clean line.",
+                partial=True,
+            )
             
     elif action.action in ["approve", "reject"]:
         found_bugs = set()
@@ -33,18 +65,26 @@ def compute_step_reward(action: CodeAction, task: Dict[str, Any], actions_taken:
                         found_bugs.add(idx)
                         
         if len(found_bugs) < len(task["bugs"]):
-            return RewardDetail(step_reward=-1.0, reason=f"{action.action} when critical bugs remain undetected.", partial=True)
+            return RewardDetail(
+                step_reward=LOW_REWARD,
+                reason=f"{action.action} when critical bugs remain undetected.",
+                partial=True,
+            )
         else:
-            return RewardDetail(step_reward=0.0, reason=f"{action.action} when all bugs found (correct!).", partial=True)
+            return RewardDetail(
+                step_reward=MEDIUM_REWARD,
+                reason=f"{action.action} when all bugs found (correct!).",
+                partial=True,
+            )
             
-    return RewardDetail(step_reward=0.0, reason="Unknown action.", partial=True)
+    return RewardDetail(step_reward=LOW_REWARD, reason="Unknown action.", partial=True)
 
 import numpy as np
 
 def evaluate_score(task: Dict[str, Any], actions_taken: List[CodeAction]) -> float:
     bugs = task.get("bugs", [])
     if not bugs:
-        score = 0.99
+        score = MAX_STRICT_VALUE
     else:
         found_bugs = set()
         for action in actions_taken:
@@ -59,5 +99,5 @@ def evaluate_score(task: Dict[str, Any], actions_taken: List[CodeAction]) -> flo
     if score == 0.0 or score == 1.0:
         print(f"WARNING: Task score is exactly {score}, which is out of range. Clipping to strictly between 0 and 1.")
         
-    clipped_score = float(np.clip(score, 1e-7, 1 - 1e-7))
-    return clipped_score
+    clipped_score = float(np.clip(score, MIN_STRICT_VALUE, MAX_STRICT_VALUE))
+    return clamp_strict(clipped_score)

@@ -15,7 +15,7 @@ CodeGuardian is a Reinforcement Learning environment where an AI agent learns to
 ## 2. Environment Explanation
 - **State**: Tracks the task, episode, total reward, step count, and completion status.
 - **Action**: Actions an AI agent takes on the code (e.g., flagging bugs, suggesting a fix).
-- **Reward**: Floating-point values ranging from partial/full rewards for correct bug detections to negative rewards for incorrect claims.
+- **Reward**: Floating-point values are always clamped to the strict open interval `(0, 1)` so validation never sees `0.0` or `1.0`.
 
 ## 3. Observation Space
 The observation space provides details for evaluating the code.
@@ -46,12 +46,18 @@ The agent responds using a structured JSON object.
 ## 5. Reward Logic
 | Action & Condition | Reward | Reason |
 | --- | --- | --- |
-| `flag_bug` (right line, right type) | +1.0 | Correctly flagged a real bug |
+| `flag_bug` (right line, right type) | +0.9 | Correctly flagged a real bug |
 | `suggest_fix` (right line) | +0.5 | Good fix suggestion |
 | `flag_bug` (right line, wrong type)| +0.3 | Flagged bug on correct line but wrong type |
-| `flag_bug` (wrong line) | -0.3 | Wrong action (flagging clean lines) |
-| `approve` / `reject` (bugs remain) | -1.0 | Ignored critical bugs |
-| `approve` (all bugs found) | 0.0 | Episode handled correctly! |
+| `flag_bug` (wrong line) | +0.1 | Wrong action still stays validator-safe |
+| `approve` / `reject` (bugs remain) | +0.1 | Critical bugs remain undetected |
+| `approve` / `reject` (all bugs found) | +0.5 | Episode handled correctly |
+
+All rewards, accumulated `total_reward`, and final task scores use the same strict clamp:
+
+```python
+value = max(0.001, min(0.999, value))
+```
 
 ## 6. Task Descriptions
 - **Easy (syntax_check)**: Detect trivial syntax errors across 15-20 lines. (Max steps: 5)
@@ -74,8 +80,8 @@ The agent responds using a structured JSON object.
 
 ## 8. Baseline Scores
 Using inference.py with standard open-weights LLMs:
-- **Easy**: Expected ~1.0
-- **Medium**: Expected ~0.5 - 1.0
+- **Easy**: Expected ~0.9 - 0.999
+- **Medium**: Expected ~0.5 - 0.999
 - **Hard**: Expected ~0.3 - 0.6
 
 ## 9. API Endpoints
